@@ -36,7 +36,7 @@ async function sendQuestionsToParticipant(interaction) {
         .setTitle(`❓ Question ${i + 1} / ${questions.length}`)
         .setDescription(q.question + '\n\n' + q.choices.join('\n'))
         .setColor('#0099ff')
-        .setFooter({ text: '⏱️ 10 seconds to answer!' })],
+        .setFooter({ text: '⏱️ 10 secondes pour répondre !' })],
       components: [row],
       ephemeral: true
     })
@@ -55,10 +55,10 @@ async function sendQuestionsToParticipant(interaction) {
           const pts = 10 + speed
           participantScores[userId].score += pts
           participantScores[userId].correct += 1
-          await i2.reply({ content: `✅ Correct answer! **+${pts} pts** (including +${speed} pts speed bonus)`, ephemeral: true })
+          await i2.reply({ content: `✅ Bonne réponse ! **+${pts} pts** (dont +${speed} pts rapidité)`, ephemeral: true })
         } else {
           participantScores[userId].wrong += 1
-          await i2.reply({ content: `❌ Wrong answer! The correct answer was **${q.answer}** — ${q.choices.find(c => c.startsWith(q.answer))}`, ephemeral: true })
+          await i2.reply({ content: `❌ Mauvaise réponse ! La bonne réponse était **${q.answer}** — ${q.choices.find(c => c.startsWith(q.answer))}`, ephemeral: true })
         }
 
         collector.stop()
@@ -73,8 +73,8 @@ async function sendQuestionsToParticipant(interaction) {
 
   await interaction.followUp({
     embeds: [new EmbedBuilder()
-      .setTitle('✅ Quiz completed!')
-      .setDescription(`**Score: ${participantScores[userId].score} pts**\n✅ ${participantScores[userId].correct} correct answers\n❌ ${participantScores[userId].wrong} wrong answers`)
+      .setTitle('✅ Quiz terminé !')
+      .setDescription(`**Score : ${participantScores[userId].score} pts**\n✅ ${participantScores[userId].correct} bonnes réponses\n❌ ${participantScores[userId].wrong} mauvaises réponses`)
       .setColor('#00FF00')],
     ephemeral: true
   })
@@ -82,7 +82,7 @@ async function sendQuestionsToParticipant(interaction) {
 
 async function startQuiz(commandInteraction) {
   if (quizRunning) {
-    await commandInteraction.reply({ content: '⚠️ A quiz is already in progress! Use /endquiz to force end it.', ephemeral: true })
+    await commandInteraction.reply({ content: '⚠️ Un quiz est déjà en cours ! Utilise /endquiz pour le terminer.', ephemeral: true })
     return
   }
 
@@ -95,19 +95,19 @@ async function startQuiz(commandInteraction) {
   const startRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('start_quiz')
-      .setLabel('🧠 Start the quiz')
+      .setLabel('🧠 Commencer le questionnaire')
       .setStyle(ButtonStyle.Success)
   )
 
   await channel.send({
     embeds: [new EmbedBuilder()
-      .setTitle('🧠 TRADING QUIZ — ARE YOU READY?')
-      .setDescription('This week\'s quiz is now available!\n\n🔒 Questions are **private** — nobody can see your answers.\n\nClick the button below to start 👇\n\n⏱️ You have **10 seconds** per question.')
+      .setTitle('🧠 QUIZ DE LA SEMAINE — PRÊTS ?')
+      .setDescription('Le quiz de la semaine est disponible !\n\n🔒 Les questions sont **privées** — personne ne voit tes réponses.\n\nClique sur le bouton ci-dessous pour commencer 👇\n\n⏱️ Tu as **10 secondes** par question.')
       .setColor('#FFD700')],
     components: [startRow]
   })
 
-  await commandInteraction.reply({ content: '✅ The quiz has been launched in the dedicated channel!', ephemeral: true })
+  await commandInteraction.reply({ content: '✅ Le quiz a été lancé dans le canal dédié !', ephemeral: true })
 
   const filter = i => i.customId === 'start_quiz'
   const collector = channel.createMessageComponentCollector({ filter, time: 7200000 })
@@ -116,11 +116,11 @@ async function startQuiz(commandInteraction) {
     const userId = interaction.user.id
 
     if (hasParticipated.has(userId)) {
-      return interaction.reply({ content: '❌ You have already participated in this week\'s quiz!', ephemeral: true })
+      return interaction.reply({ content: '❌ Tu as déjà participé au quiz cette semaine !', ephemeral: true })
     }
 
     hasParticipated.add(userId)
-    await interaction.reply({ content: '🚀 The quiz is starting! Questions are on their way...', ephemeral: true })
+    await interaction.reply({ content: '🚀 Le quiz commence ! Les questions arrivent...', ephemeral: true })
     sendQuestionsToParticipant(interaction)
   })
 
@@ -133,26 +133,26 @@ async function registerCommands() {
   const commands = [
     new SlashCommandBuilder()
       .setName('quiz')
-      .setDescription('Launch this week\'s trading quiz')
+      .setDescription('Lance le quiz de la semaine')
       .toJSON(),
     new SlashCommandBuilder()
       .setName('classement')
-      .setDescription('Display the current quiz leaderboard')
+      .setDescription('Affiche le classement du quiz')
       .toJSON(),
     new SlashCommandBuilder()
       .setName('endquiz')
-      .setDescription('Force end the current quiz')
+      .setDescription('Termine le quiz en cours')
       .toJSON()
   ]
 
   const rest = new REST({ version: '10' }).setToken(TOKEN)
   await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] })
   await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands })
-  console.log('✅ Commands /quiz, /classement and /endquiz registered')
+  console.log('✅ Commandes /quiz, /classement et /endquiz enregistrées')
 }
 
 client.on('ready', async () => {
-  console.log(`✅ Bot connected: ${client.user.tag}`)
+  console.log(`✅ Bot connecté : ${client.user.tag}`)
   await registerCommands()
 
   setInterval(() => {
@@ -178,13 +178,13 @@ client.on('interactionCreate', async interaction => {
     const medals = ['🥇', '🥈', '🥉']
     const classement = top.length
       ? top.map(([id, data], i) =>
-          `${medals[i] || `${i + 1}.`} **${data.username}** — ${data.score} pts (${data.correct} correct / ${data.wrong} wrong)`
+          `${medals[i] || `${i + 1}.`} **${data.username}** — ${data.score} pts (${data.correct} bonnes / ${data.wrong} mauvaises)`
         ).join('\n')
-      : 'No participants yet.'
+      : 'Aucun participant pour le moment.'
 
     await interaction.reply({
       embeds: [new EmbedBuilder()
-        .setTitle('🏆 QUIZ LEADERBOARD')
+        .setTitle('🏆 CLASSEMENT DU QUIZ')
         .setDescription(classement)
         .setColor('#FFD700')],
       ephemeral: false
@@ -195,9 +195,9 @@ client.on('interactionCreate', async interaction => {
     if (quizRunning) {
       quizRunning = false
       hasParticipated.clear()
-      await interaction.reply({ content: '✅ The quiz has been manually ended. You can now start a new one with /quiz.', ephemeral: true })
+      await interaction.reply({ content: '✅ Le quiz a été terminé manuellement. Tu peux en relancer un nouveau avec /quiz.', ephemeral: true })
     } else {
-      await interaction.reply({ content: '⚠️ No quiz is currently running.', ephemeral: true })
+      await interaction.reply({ content: '⚠️ Aucun quiz en cours.', ephemeral: true })
     }
   }
 })
