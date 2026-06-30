@@ -1,66 +1,52 @@
-const today = new Date().toISOString().slice(0, 10) // Format: YYYY-MM-DD
-
-const allQuestions = {
-  "2026-06-29": [
-    {
-      question: "Quel joueur du PSG représente le Brésil au Mondial ?",
-      choices: ["A - Mbappé", "B - Vitinha", "C - Marquinhos", "D - Dembélé"],
-      answer: "C"
-    },
-    {
-      question: "Combien de buts Vinícius a-t-il marqués lors du 1er match du Brésil ?",
-      choices: ["A - 0", "B - 1", "C - 2", "D - 3"],
-      answer: "B"
-    },
-    {
-      question: "Quelle nation PSG a remporté son premier match du Mondial ?",
-      choices: ["A - France", "B - Espagne", "C - Brésil", "D - Portugal"],
-      answer: "C"
-    },
-    {
-      question: "Quel Parisien a été élu homme du match lors du premier match de l'Espagne ?",
-      choices: ["A - Hakimi", "B - Dembélé", "C - Vitinha", "D - Yamal"],
-      answer: "B"
-    },
-    {
-      question: "Combien de nations PSG participent à la CDM des Parisiens ?",
-      choices: ["A - 4", "B - 6", "C - 8", "D - 10"],
-      answer: "C"
-    },
-    {
-      question: "Quel joueur PSG représente le Maroc ?",
-      choices: ["A - Hakimi", "B - Fabian Ruiz", "C - Nuno Mendes", "D - Marquinhos"],
-      answer: "A"
-    },
-    {
-      question: "Quel format de score rapporte le plus de points dans les pronos CDM ?",
-      choices: ["A - Bonne équipe gagnante", "B - Score exact", "C - Nombre de buts", "D - Buteur décisif"],
-      answer: "B"
-    },
-    {
-      question: "Quel canal utiliser pour poser tes pronos sur le serveur PSG ?",
-      choices: ["A - #général", "B - #pronomondial", "C - #résultats", "D - #classement"],
-      answer: "B"
-    },
-    {
-      question: "Combien de points rapporte un bon résultat dans les pronos CDM ?",
-      choices: ["A - 3 pts", "B - 5 pts", "C - 10 pts", "D - 15 pts"],
-      answer: "B"
-    },
-    {
-      question: "Quel joueur PSG représente la Corée du Sud ?",
-      choices: ["A - Lee Kang-in", "B - Hwang Hee-chan", "C - Son Heung-min", "D - Kim Min-jae"],
-      answer: "A"
-    }
-  ],
-  "2026-06-30": [
-    {
-      question: "Question du 30 juin — Complète avec tes propres questions !",
-      choices: ["A - Choix 1", "B - Choix 2", "C - Choix 3", "D - Choix 4"],
-      answer: "A"
-    }
-    // Ajoute tes 10 questions ici
-  ]
-}
-
-module.exports = allQuestions[today] || []
+module.exports = [
+  {
+    question: "Quel était le score final de Brésil - Japon ?",
+    choices: ["A - 1-1", "B - 2-1", "C - 3-1", "D - 2-0"],
+    answer: "B"
+  },
+  {
+    question: "Le Brésil s'est qualifié pour quel tour suivant ?",
+    choices: ["A - Quarts de finale", "B - Huitièmes de finale", "C - Demi-finale", "D - Finale"],
+    answer: "B"
+  },
+  {
+    question: "Qui a ouvert le score dans ce match ?",
+    choices: ["A - Casemiro", "B - Martinelli", "C - Sano", "D - Vinícius Jr"],
+    answer: "C"
+  },
+  {
+    question: "À quelle minute le Japon a-t-il ouvert le score ?",
+    choices: ["A - 12e", "B - 29e", "C - 56e", "D - 90+6e"],
+    answer: "B"
+  },
+  {
+    question: "Quel joueur PSG a égalisé pour le Brésil ?",
+    choices: ["A - Vinícius Jr", "B - Marquinhos", "C - Casemiro", "D - Bruno Guimarães"],
+    answer: "C"
+  },
+  {
+    question: "Dans quelle ville s'est joué ce match ?",
+    choices: ["A - Dallas", "B - Houston", "C - New York", "D - Atlanta"],
+    answer: "B"
+  },
+  {
+    question: "Quel adversaire attend le Brésil en huitièmes de finale ?",
+    choices: ["A - Le vainqueur de Côte d'Ivoire - Norvège", "B - Le Maroc", "C - Le Portugal", "D - L'Allemagne"],
+    answer: "A"
+  },
+  {
+    question: "À quel moment du temps additionnel Martinelli a-t-il marqué le but de la qualification ?",
+    choices: ["A - 85e", "B - 88e", "C - 90+5/90+6e", "D - 93e"],
+    answer: "C"
+  },
+  {
+    question: "Quel défenseur brésilien est à l'origine de l'erreur ayant permis au Japon d'ouvrir le score ?",
+    choices: ["A - Marquinhos", "B - Danilo", "C - Alisson", "D - Gabriel Magalhães"],
+    answer: "B"
+  },
+  {
+    question: "Casemiro est sorti sur blessure pendant ce match. À quel moment ?",
+    choices: ["A - Pendant la 1ère mi-temps", "B - À la mi-temps", "C - Pendant le temps additionnel de la 2e mi-temps", "D - Il n'est pas sorti blessé"],
+    answer: "C"
+  }
+]
