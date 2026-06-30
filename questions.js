@@ -11,7 +11,7 @@ module.exports = [
   },
   {
     question: "Qui a fait la passe décisive sur le but égalisateur de Casemiro contre le Japon ?",
-    choices: ["A - Vinícius Jr", "B - Bruno Guimarães", "C - Marquinhos", "D - Matheus Cunha"],
+    choices: ["A - Vinícius Jr", "B - Gabriel", "C - Marquinhos", "D - Matheus Cunha"],
     answer: "B"
   },
   {
