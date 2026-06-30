@@ -1,9 +1,11 @@
 const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, REST, Routes, SlashCommandBuilder } = require('discord.js')
+const fs = require('fs')
 const questions = require('./questions')
 
 const TOKEN = process.env.TOKEN
 const CHANNEL_ID = process.env.QUIZ_CHANNEL_ID
 const CLIENT_ID = process.env.CLIENT_ID
+const SCORES_FILE = './scores.json'
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
@@ -11,7 +13,23 @@ const client = new Client({
 
 let quizRunning = false
 const hasParticipated = new Set()
-const globalScores = {} // cumulé sur tous les quiz tant que le bot ne redémarre pas
+
+function loadScores() {
+  try {
+    if (fs.existsSync(SCORES_FILE)) {
+      return JSON.parse(fs.readFileSync(SCORES_FILE, 'utf8'))
+    }
+  } catch (e) {
+    console.log('Pas de fichier scores existant, création...')
+  }
+  return {}
+}
+
+function saveScores(scores) {
+  fs.writeFileSync(SCORES_FILE, JSON.stringify(scores, null, 2))
+}
+
+let globalScores = loadScores()
 
 async function sendQuestionsToParticipant(interaction) {
   const userId = interaction.user.id
@@ -78,6 +96,8 @@ async function sendQuestionsToParticipant(interaction) {
   globalScores[userId].correct += quizCorrect
   globalScores[userId].wrong += quizWrong
   globalScores[userId].quizzesPlayed += 1
+  globalScores[userId].username = username
+  saveScores(globalScores)
 
   await interaction.followUp({
     embeds: [new EmbedBuilder()
@@ -177,6 +197,8 @@ client.on('interactionCreate', async interaction => {
   }
 
   if (interaction.commandName === 'classement') {
+    globalScores = loadScores()
+
     const top = Object.entries(globalScores)
       .sort((a, b) => b[1].score - a[1].score)
       .slice(0, 10)
