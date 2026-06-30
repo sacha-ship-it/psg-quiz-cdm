@@ -10,16 +10,20 @@ const client = new Client({
 })
 
 let quizRunning = false
-const participantScores = {}
 const hasParticipated = new Set()
+const globalScores = {} // cumulé sur tous les quiz tant que le bot ne redémarre pas
 
 async function sendQuestionsToParticipant(interaction) {
   const userId = interaction.user.id
   const username = interaction.user.username
 
-  if (!participantScores[userId]) {
-    participantScores[userId] = { username, score: 0, correct: 0, wrong: 0 }
+  if (!globalScores[userId]) {
+    globalScores[userId] = { username, score: 0, correct: 0, wrong: 0, quizzesPlayed: 0 }
   }
+
+  let quizScore = 0
+  let quizCorrect = 0
+  let quizWrong = 0
 
   for (let i = 0; i < questions.length; i++) {
     const q = questions[i]
@@ -53,11 +57,11 @@ async function sendQuestionsToParticipant(interaction) {
 
         if (choice === q.answer) {
           const pts = 10 + speed
-          participantScores[userId].score += pts
-          participantScores[userId].correct += 1
+          quizScore += pts
+          quizCorrect += 1
           await i2.reply({ content: `✅ Bonne réponse ! +${pts} pts (dont +${speed} pts rapidité)`, ephemeral: true })
         } else {
-          participantScores[userId].wrong += 1
+          quizWrong += 1
           await i2.reply({ content: `❌ Mauvaise réponse ! La bonne réponse était ${q.answer} : ${q.choices.find(c => c.startsWith(q.answer))}`, ephemeral: true })
         }
 
@@ -70,10 +74,15 @@ async function sendQuestionsToParticipant(interaction) {
     })
   }
 
+  globalScores[userId].score += quizScore
+  globalScores[userId].correct += quizCorrect
+  globalScores[userId].wrong += quizWrong
+  globalScores[userId].quizzesPlayed += 1
+
   await interaction.followUp({
     embeds: [new EmbedBuilder()
       .setTitle('🏁 Quiz terminé !')
-      .setDescription(`Score : ${participantScores[userId].score} pts\n✅ Bonnes réponses : ${participantScores[userId].correct}\n❌ Mauvaises réponses : ${participantScores[userId].wrong}\n\nReviens demain pour un nouveau quiz !`)
+      .setDescription(`Score de ce quiz : ${quizScore} pts\n✅ Bonnes réponses : ${quizCorrect}\n❌ Mauvaises réponses : ${quizWrong}\n\nReviens demain pour un nouveau quiz !`)
       .setColor('#004170')],
     ephemeral: true
   })
@@ -91,7 +100,6 @@ async function startQuiz(commandInteraction) {
   }
 
   quizRunning = true
-  Object.keys(participantScores).forEach(k => delete participantScores[k])
   hasParticipated.clear()
 
   const channel = await client.channels.fetch(CHANNEL_ID)
@@ -142,7 +150,7 @@ async function registerCommands() {
       .toJSON(),
     new SlashCommandBuilder()
       .setName('classement')
-      .setDescription('Affiche le classement du quiz du jour')
+      .setDescription('Affiche le classement général cumulé')
       .toJSON(),
     new SlashCommandBuilder()
       .setName('endquiz')
@@ -169,20 +177,20 @@ client.on('interactionCreate', async interaction => {
   }
 
   if (interaction.commandName === 'classement') {
-    const top = Object.entries(participantScores)
+    const top = Object.entries(globalScores)
       .sort((a, b) => b[1].score - a[1].score)
       .slice(0, 10)
 
     const medals = ['🥇', '🥈', '🥉']
     const classement = top.length
       ? top.map(([id, data], i) =>
-          `${medals[i] || `${i + 1}.`} ${data.username} : ${data.score} pts (${data.correct} bonnes, ${data.wrong} mauvaises)`
+          `${medals[i] || `${i + 1}.`} ${data.username} : ${data.score} pts (${data.quizzesPlayed} quiz joués)`
         ).join('\n')
       : 'Aucun participant pour le moment.'
 
     await interaction.reply({
       embeds: [new EmbedBuilder()
-        .setTitle('🏆 CLASSEMENT DU QUIZ DU JOUR')
+        .setTitle('🏆 CLASSEMENT GÉNÉRAL')
         .setDescription(classement)
         .setColor('#DA291C')],
       ephemeral: false
