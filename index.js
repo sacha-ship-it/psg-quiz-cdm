@@ -33,9 +33,9 @@ async function sendQuestionsToParticipant(interaction) {
 
     await interaction.followUp({
       embeds: [new EmbedBuilder()
-        .setTitle(`❓ Question ${i + 1} / ${questions.length}`)
+        .setTitle(`⚽ Question ${i + 1} / ${questions.length}`)
         .setDescription(q.question + '\n\n' + q.choices.join('\n'))
-        .setColor('#0099ff')
+        .setColor('#004170')
         .setFooter({ text: '⏱️ 10 secondes pour répondre !' })],
       components: [row],
       ephemeral: true
@@ -74,8 +74,8 @@ async function sendQuestionsToParticipant(interaction) {
   await interaction.followUp({
     embeds: [new EmbedBuilder()
       .setTitle('✅ Quiz terminé !')
-      .setDescription(`**Score : ${participantScores[userId].score} pts**\n✅ ${participantScores[userId].correct} bonnes réponses\n❌ ${participantScores[userId].wrong} mauvaises réponses`)
-      .setColor('#00FF00')],
+      .setDescription(`**Score : ${participantScores[userId].score} pts**\n✅ ${participantScores[userId].correct} bonnes réponses\n❌ ${participantScores[userId].wrong} mauvaises réponses\n\nReviens demain pour un nouveau quiz ! 🔵🔴`)
+      .setColor('#004170')],
     ephemeral: true
   })
 }
@@ -83,6 +83,11 @@ async function sendQuestionsToParticipant(interaction) {
 async function startQuiz(commandInteraction) {
   if (quizRunning) {
     await commandInteraction.reply({ content: '⚠️ Un quiz est déjà en cours ! Utilise /endquiz pour le terminer.', ephemeral: true })
+    return
+  }
+
+  if (questions.length === 0) {
+    await commandInteraction.reply({ content: '❌ Pas de questions configurées pour aujourd\'hui.', ephemeral: true })
     return
   }
 
@@ -95,28 +100,29 @@ async function startQuiz(commandInteraction) {
   const startRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('start_quiz')
-      .setLabel('🧠 Commencer le questionnaire')
+      .setLabel('⚽ Commencer le quiz du jour')
       .setStyle(ButtonStyle.Success)
   )
 
   await channel.send({
     embeds: [new EmbedBuilder()
-      .setTitle('🧠 QUIZ DE LA SEMAINE — PRÊTS ?')
-      .setDescription('Le quiz de la semaine est disponible !\n\n🔒 Les questions sont **privées** — personne ne voit tes réponses.\n\nClique sur le bouton ci-dessous pour commencer 👇\n\n⏱️ Tu as **10 secondes** par question.')
-      .setColor('#FFD700')],
+      .setTitle('🔵🔴 QUIZ DU JOUR — CDM DES PARISIENS')
+      .setDescription('Le quiz du jour est disponible !\n\n🔒 Les questions sont **privées** — personne ne voit tes réponses.\n\nClique sur le bouton ci-dessous pour commencer 👇\n\n⏱️ Tu as **10 secondes** par question.')
+      .setColor('#004170')
+      .setFooter({ text: 'CDM des Parisiens — Un nouveau quiz chaque jour 🔵🔴' })],
     components: [startRow]
   })
 
-  await commandInteraction.reply({ content: '✅ Le quiz a été lancé dans le canal dédié !', ephemeral: true })
+  await commandInteraction.reply({ content: '✅ Le quiz du jour a été lancé dans le canal dédié !', ephemeral: true })
 
   const filter = i => i.customId === 'start_quiz'
-  const collector = channel.createMessageComponentCollector({ filter, time: 7200000 })
+  const collector = channel.createMessageComponentCollector({ filter, time: 86400000 }) // 24h
 
   collector.on('collect', async interaction => {
     const userId = interaction.user.id
 
     if (hasParticipated.has(userId)) {
-      return interaction.reply({ content: '❌ Tu as déjà participé au quiz cette semaine !', ephemeral: true })
+      return interaction.reply({ content: '❌ Tu as déjà participé au quiz d\'aujourd\'hui ! Reviens demain 🔵🔴', ephemeral: true })
     }
 
     hasParticipated.add(userId)
@@ -133,11 +139,11 @@ async function registerCommands() {
   const commands = [
     new SlashCommandBuilder()
       .setName('quiz')
-      .setDescription('Lance le quiz de la semaine')
+      .setDescription('Lance le quiz du jour')
       .toJSON(),
     new SlashCommandBuilder()
       .setName('classement')
-      .setDescription('Affiche le classement du quiz')
+      .setDescription('Affiche le classement du quiz du jour')
       .toJSON(),
     new SlashCommandBuilder()
       .setName('endquiz')
@@ -154,13 +160,6 @@ async function registerCommands() {
 client.on('ready', async () => {
   console.log(`✅ Bot connecté : ${client.user.tag}`)
   await registerCommands()
-
-  setInterval(() => {
-    const now = new Date()
-    if (now.getDay() === 5 && now.getHours() === 16 && now.getMinutes() === 0) {
-      client.channels.fetch(CHANNEL_ID).then(channel => startQuiz({ reply: async () => {} }))
-    }
-  }, 60000)
 })
 
 client.on('interactionCreate', async interaction => {
@@ -184,9 +183,9 @@ client.on('interactionCreate', async interaction => {
 
     await interaction.reply({
       embeds: [new EmbedBuilder()
-        .setTitle('🏆 CLASSEMENT DU QUIZ')
+        .setTitle('🏆 CLASSEMENT DU QUIZ DU JOUR')
         .setDescription(classement)
-        .setColor('#FFD700')],
+        .setColor('#004170')],
       ephemeral: false
     })
   }
