@@ -1,52 +1,52 @@
 module.exports = [
   {
-    question: "Quel était le score final (après prolongation) de Pays-Bas - Maroc ?",
-    choices: ["A - 1-0", "B - 2-1", "C - 1-1", "D - 0-0"],
+    question: "Quel était le score final de France - Suède ?",
+    choices: ["A - 2-0", "B - 3-1", "C - 3-0", "D - 4-0"],
     answer: "C"
   },
   {
-    question: "Comment le Maroc s'est-il qualifié contre les Pays-Bas ?",
-    choices: ["A - Score exact en 90 minutes", "B - But en or", "C - Tirs au but", "D - Carton rouge décisif"],
-    answer: "C"
-  },
-  {
-    question: "Qui a fait la passe décisive sur le but égalisateur de Casemiro contre le Japon ?",
-    choices: ["A - Vinícius Jr", "B - Gabriel", "C - Marquinhos", "D - Matheus Cunha"],
+    question: "La France s'est qualifiée pour quel tour suivant ?",
+    choices: ["A - Quarts de finale", "B - Huitièmes de finale", "C - Demi-finale", "D - Finale"],
     answer: "B"
   },
   {
-    question: "Quel joueur a marqué le but des Pays-Bas contre le Maroc ?",
-    choices: ["A - Brobbey", "B - Summerville", "C - Gakpo", "D - Dumfries"],
-    answer: "C"
+    question: "Qui a ouvert le score pour la France ?",
+    choices: ["A - Barcola", "B - Dembélé", "C - Olise", "D - Mbappé"],
+    answer: "D"
   },
   {
-    question: "À quelle minute Gakpo a-t-il marqué pour les Pays-Bas ?",
-    choices: ["A - 45e", "B - 57e", "C - 72e", "D - 90e"],
-    answer: "C"
-  },
-  {
-    question: "Quel score final aux tirs au but a permis au Maroc de se qualifier ?",
-    choices: ["A - 4-2", "B - 3-2", "C - 5-4", "D - 3-1"],
+    question: "À quelle minute Mbappé a-t-il ouvert le score ?",
+    choices: ["A - 34e", "B - 45e", "C - 53e", "D - 74e"],
     answer: "B"
   },
   {
-    question: "Quel joueur PSG est le capitaine du Maroc ?",
-    choices: ["A - Achraf Hakimi", "B - Issa Diop", "C - Brahim Díaz", "D - Azzedine Ounahi"],
-    answer: "A"
+    question: "Quel joueur PSG a marqué le deuxième but de la France ?",
+    choices: ["A - Mbappé", "B - Dembélé", "C - Barcola", "D - Olise"],
+    answer: "C"
   },
   {
-    question: "Qui a marqué le but égalisateur du Maroc en fin de temps additionnel ?",
-    choices: ["A - Saibari", "B - Diop", "C - Hakimi", "D - El Aynaoui"],
-    answer: "B"
+    question: "Combien de passes décisives Michael Olise a-t-il délivrées dans ce match ?",
+    choices: ["A - 0", "B - 1", "C - 2", "D - 3"],
+    answer: "C"
   },
   {
-    question: "Qui est le gardien marocain décisif lors de la séance de tirs au but ?",
-    choices: ["A - Bono", "B - Diop", "C - Mazraoui", "D - Hakimi"],
-    answer: "A"
+    question: "Quel joueur PSG a délivré la passe décisive sur le premier but de Mbappé ?",
+    choices: ["A - Koundé", "B - Rabiot", "C - Dembélé", "D - Barcola"],
+    answer: "C"
   },
   {
-    question: "Quel joueur a marqué le tir au but décisif pour le Maroc ?",
-    choices: ["A - Hakimi", "B - Saibari", "C - Brahim Díaz", "D - El Khannouss"],
+    question: "Combien de buts Mbappé a-t-il marqués au total dans ce Mondial après ce match ?",
+    choices: ["A - 4", "B - 5", "C - 6", "D - 7"],
+    answer: "C"
+  },
+  {
+    question: "Quel adversaire attend la France en huitièmes de finale ?",
+    choices: ["A - L'Argentine", "B - Le Brésil", "C - L'Allemagne", "D - Le Paraguay"],
+    answer: "D"
+  },
+  {
+    question: "Quel gardien suédois a réalisé plusieurs arrêts remarquables face aux Bleus ?",
+    choices: ["A - Olsen", "B - Zetterström", "C - Nordfeldt", "D - Dahlin"],
     answer: "B"
   }
 ]
