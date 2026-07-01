@@ -1,47 +1,58 @@
 const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, REST, Routes, SlashCommandBuilder } = require('discord.js')
-const fs = require('fs')
 const questions = require('./questions')
 
 const TOKEN = process.env.TOKEN
 const CHANNEL_ID = process.env.QUIZ_CHANNEL_ID
 const CLIENT_ID = process.env.CLIENT_ID
-const SCORES_FILE = './scores.json'
+const SCORES_CHANNEL_ID = process.env.SCORES_CHANNEL_ID
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds]
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
 })
 
 let quizRunning = false
 const hasParticipated = new Set()
+let currentQuizScores = {}
+let scoresMessageId = null
 
-function loadScores() {
+async function loadScoresFromDiscord() {
   try {
-    if (fs.existsSync(SCORES_FILE)) {
-      return JSON.parse(fs.readFileSync(SCORES_FILE, 'utf8'))
+    const channel = await client.channels.fetch(SCORES_CHANNEL_ID)
+    const messages = await channel.messages.fetch({ limit: 10 })
+    const scoresMsg = messages.find(m => m.author.id === client.user.id && m.content.startsWith('SCORES:'))
+    if (scoresMsg) {
+      currentQuizScores = JSON.parse(scoresMsg.content.replace('SCORES:', ''))
+      scoresMessageId = scoresMsg.id
+      console.log('Scores chargés depuis Discord')
     }
   } catch (e) {
-    console.log('Pas de fichier scores existant, création...')
+    console.log('Pas de scores existants:', e.message)
   }
-  return {}
 }
 
-function saveScores(scores) {
-  fs.writeFileSync(SCORES_FILE, JSON.stringify(scores, null, 2))
+async function saveScoresToDiscord() {
+  try {
+    const channel = await client.channels.fetch(SCORES_CHANNEL_ID)
+    const content = 'SCORES:' + JSON.stringify(currentQuizScores)
+    if (scoresMessageId) {
+      const msg = await channel.messages.fetch(scoresMessageId)
+      await msg.edit(content)
+    } else {
+      const msg = await channel.send(content)
+      scoresMessageId = msg.id
+    }
+  } catch (e) {
+    console.error('Erreur sauvegarde scores:', e.message)
+  }
 }
-
-let globalScores = loadScores()
 
 async function sendQuestionsToParticipant(interaction) {
   const userId = interaction.user.id
   const username = interaction.user.username
 
-  if (!globalScores[userId]) {
-    globalScores[userId] = { username, score: 0, correct: 0, wrong: 0, quizzesPlayed: 0 }
+  if (!currentQuizScores[userId]) {
+    currentQuizScores[userId] = { username, score: 0, correct: 0, wrong: 0 }
   }
-
-  let quizScore = 0
-  let quizCorrect = 0
-  let quizWrong = 0
 
   for (let i = 0; i < questions.length; i++) {
     const q = questions[i]
@@ -55,15 +66,16 @@ async function sendQuestionsToParticipant(interaction) {
 
     await interaction.followUp({
       embeds: [new EmbedBuilder()
-        .setTitle(`⚽ Question ${i + 1} / ${questions.length}`)
+        .setTitle(`🧠 Question ${i + 1} / ${questions.length}`)
         .setDescription(q.question + '\n\n' + q.choices.join('\n'))
-        .setColor('#DA291C')
-        .setFooter({ text: '⏱️ 10 secondes pour répondre !' })],
+        .setColor('#0099ff')
+        .setFooter({ text: '⏱️ 10 seconds to answer!' })],
       components: [row],
       ephemeral: true
     })
 
     const startTime = Date.now()
+    let answerFeedback = ''
 
     await new Promise(resolve => {
       const filter = i2 => i2.customId.endsWith(`_${userId}`) && i2.user.id === userId
@@ -75,85 +87,90 @@ async function sendQuestionsToParticipant(interaction) {
 
         if (choice === q.answer) {
           const pts = 10 + speed
-          quizScore += pts
-          quizCorrect += 1
-          await i2.reply({ content: `✅ Bonne réponse ! +${pts} pts (dont +${speed} pts rapidité)`, ephemeral: true })
+          currentQuizScores[userId].score += pts
+          currentQuizScores[userId].correct += 1
+          answerFeedback = `✅ Correct answer! +${pts} pts (including +${speed} speed bonus)`
         } else {
-          quizWrong += 1
-          await i2.reply({ content: `❌ Mauvaise réponse ! La bonne réponse était ${q.answer} : ${q.choices.find(c => c.startsWith(q.answer))}`, ephemeral: true })
+          currentQuizScores[userId].wrong += 1
+          answerFeedback = `❌ Wrong answer! The correct answer was ${q.answer}: ${q.choices.find(c => c.startsWith(q.answer))}`
         }
 
+        await i2.deferUpdate()
         collector.stop()
       })
 
-      collector.on('end', () => {
-        setTimeout(resolve, 1500)
+      collector.on('end', async (collected) => {
+        if (collected.size === 0) {
+          answerFeedback = `⏱️ Time's up! The correct answer was ${q.answer}: ${q.choices.find(c => c.startsWith(q.answer))}`
+          currentQuizScores[userId].wrong += 1
+        }
+
+        await interaction.followUp({ content: answerFeedback, ephemeral: true })
+        setTimeout(resolve, 2000)
       })
     })
   }
 
-  globalScores[userId].score += quizScore
-  globalScores[userId].correct += quizCorrect
-  globalScores[userId].wrong += quizWrong
-  globalScores[userId].quizzesPlayed += 1
-  globalScores[userId].username = username
-  saveScores(globalScores)
+  currentQuizScores[userId].username = username
+  await saveScoresToDiscord()
 
   await interaction.followUp({
     embeds: [new EmbedBuilder()
-      .setTitle('🏁 Quiz terminé !')
-      .setDescription(`Score de ce quiz : ${quizScore} pts\n✅ Bonnes réponses : ${quizCorrect}\n❌ Mauvaises réponses : ${quizWrong}\n\nReviens demain pour un nouveau quiz !`)
-      .setColor('#004170')],
+      .setTitle('🏁 Quiz completed!')
+      .setDescription(`Score: ${currentQuizScores[userId].score} pts\n✅ Correct: ${currentQuizScores[userId].correct}\n❌ Wrong: ${currentQuizScores[userId].wrong}\n\nCome back next week for a new quiz!`)
+      .setColor('#00FF00')],
     ephemeral: true
   })
 }
 
 async function startQuiz(commandInteraction) {
   if (quizRunning) {
-    await commandInteraction.reply({ content: '⚠️ Un quiz est déjà en cours ! Utilise /endquiz pour le terminer.', ephemeral: true })
+    await commandInteraction.reply({ content: '⚠️ A quiz is already running! Use /endquiz to end it.', ephemeral: true })
     return
   }
 
   if (questions.length === 0) {
-    await commandInteraction.reply({ content: '❌ Pas de questions configurées pour aujourd\'hui.', ephemeral: true })
+    await commandInteraction.reply({ content: '❌ No questions configured for this week.', ephemeral: true })
     return
   }
 
   quizRunning = true
   hasParticipated.clear()
+  currentQuizScores = {}
+  scoresMessageId = null
 
   const channel = await client.channels.fetch(CHANNEL_ID)
 
   const startRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('start_quiz')
-      .setLabel('⚽ Commencer le quiz du jour')
+      .setLabel('🧠 Start the quiz')
       .setStyle(ButtonStyle.Success)
   )
 
   await channel.send({
     embeds: [new EmbedBuilder()
-      .setTitle('🔴🔵 QUIZ DU JOUR : CDM DES PARISIENS')
-      .setDescription('Le quiz du jour est disponible !\n\n🔒 Les questions sont privées, personne ne voit tes réponses.\n\nClique sur le bouton ci-dessous pour commencer 👇\n\n⏱️ Tu as 10 secondes par question.')
-      .setColor('#DA291C')
-      .setFooter({ text: '🔴🔵 CDM des Parisiens, un nouveau quiz chaque jour' })],
+      .setTitle('🧠 THE FLOOR 8 QUIZ OF THE WEEK')
+      .setDescription('This week\'s quiz is now available!\n\n🔒 Questions are private, nobody can see your answers.\n\nClick the button below to start 👇\n\n⏱️ You have 10 seconds per question.')
+      .setColor('#FFD700')
+      .setFooter({ text: 'A new quiz every week 🧠' })],
     components: [startRow]
   })
 
-  await commandInteraction.reply({ content: '✅ Le quiz du jour a été lancé dans le canal dédié !', ephemeral: true })
+  await commandInteraction.reply({ content: '✅ This week\'s quiz has been launched in the dedicated channel!', ephemeral: true })
 
   const filter = i => i.customId === 'start_quiz'
-  const collector = channel.createMessageComponentCollector({ filter, time: 86400000 })
+  const collector = channel.createMessageComponentCollector({ filter, time: 604800000 })
 
   collector.on('collect', async interaction => {
     const userId = interaction.user.id
 
     if (hasParticipated.has(userId)) {
-      return interaction.reply({ content: '❌ Tu as déjà participé au quiz d\'aujourd\'hui ! Reviens demain.', ephemeral: true })
+      return interaction.reply({ content: '❌ You\'ve already taken this week\'s quiz! Come back next week.', ephemeral: true })
     }
 
     hasParticipated.add(userId)
-    await interaction.reply({ content: '🚀 Le quiz commence ! Les questions arrivent...', ephemeral: true })
+    await interaction.reply({ content: '🚀 The quiz is starting! Questions are on their way...', ephemeral: true })
     sendQuestionsToParticipant(interaction)
   })
 
@@ -166,27 +183,28 @@ async function registerCommands() {
   const commands = [
     new SlashCommandBuilder()
       .setName('quiz')
-      .setDescription('Lance le quiz du jour')
+      .setDescription('Launch this week\'s quiz')
       .toJSON(),
     new SlashCommandBuilder()
       .setName('classement')
-      .setDescription('Affiche le classement général cumulé')
+      .setDescription('Show this week\'s quiz leaderboard')
       .toJSON(),
     new SlashCommandBuilder()
       .setName('endquiz')
-      .setDescription('Termine le quiz en cours')
+      .setDescription('End the current quiz')
       .toJSON()
   ]
 
   const rest = new REST({ version: '10' }).setToken(TOKEN)
   await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] })
   await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands })
-  console.log('Commandes /quiz, /classement et /endquiz enregistrées')
+  console.log('Commands registered')
 }
 
 client.on('ready', async () => {
-  console.log(`Bot connecté : ${client.user.tag}`)
+  console.log(`Bot connected: ${client.user.tag}`)
   await registerCommands()
+  await loadScoresFromDiscord()
 })
 
 client.on('interactionCreate', async interaction => {
@@ -197,24 +215,23 @@ client.on('interactionCreate', async interaction => {
   }
 
   if (interaction.commandName === 'classement') {
-    globalScores = loadScores()
-
-    const top = Object.entries(globalScores)
+    const top = Object.entries(currentQuizScores)
       .sort((a, b) => b[1].score - a[1].score)
       .slice(0, 10)
 
     const medals = ['🥇', '🥈', '🥉']
     const classement = top.length
-      ? top.map(([id, data], i) =>
-          `${medals[i] || `${i + 1}.`} ${data.username} : ${data.score} pts (${data.quizzesPlayed} quiz joués)`
-        ).join('\n')
-      : 'Aucun participant pour le moment.'
+      ? top.map(([id, data], i) => {
+          const rank = medals[i] || (i + 1) + '.'
+          return rank + ' ' + data.username + ': ' + data.score + ' pts (' + data.correct + ' correct, ' + data.wrong + ' wrong)'
+        }).join('\n')
+      : 'No participants yet.'
 
     await interaction.reply({
       embeds: [new EmbedBuilder()
-        .setTitle('🏆 CLASSEMENT GÉNÉRAL')
+        .setTitle('🏆 THIS WEEK\'S QUIZ LEADERBOARD')
         .setDescription(classement)
-        .setColor('#DA291C')],
+        .setColor('#FFD700')],
       ephemeral: false
     })
   }
@@ -223,9 +240,9 @@ client.on('interactionCreate', async interaction => {
     if (quizRunning) {
       quizRunning = false
       hasParticipated.clear()
-      await interaction.reply({ content: '✅ Le quiz a été terminé manuellement. Tu peux en relancer un nouveau avec /quiz.', ephemeral: true })
+      await interaction.reply({ content: '✅ The quiz has been manually ended. You can launch a new one with /quiz.', ephemeral: true })
     } else {
-      await interaction.reply({ content: '⚠️ Aucun quiz en cours.', ephemeral: true })
+      await interaction.reply({ content: '⚠️ No quiz currently running.', ephemeral: true })
     }
   }
 })
